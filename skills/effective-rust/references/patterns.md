@@ -96,6 +96,33 @@ already wrote their own wrapper.
 `Display`. Never `as` between numeric types unless the conversion is
 provably lossless or you intend the wrap and say so with `wrapping_*`.
 
+When you catch yourself writing `fn make_frame(h: Header, p: Payload) ->
+Result<Frame, E>` or `Frame::from_parts(..)`, the function is a conversion:
+its body moves fields from the inputs into the output. Express it as the
+trait so every caller gets `?`, `.into()`, `.try_into()` and
+`collect::<Result<Vec<_>, _>>()` for free, and so the compiler can find
+every conversion site.
+
+```rust
+impl TryFrom<(Header, Payload)> for Frame {
+    type Error = FrameError;
+    fn try_from((header, payload): (Header, Payload)) -> Result<Self, Self::Error> {
+        let len = u16::try_from(payload.body.len()).map_err(|_| FrameError::TooLong)?;
+        Ok(Self { version: header.version, flags: header.flags, len, body: payload.body })
+    }
+}
+
+impl From<&Frame> for Header {
+    fn from(f: &Frame) -> Self { Self { version: f.version, flags: f.flags } }
+}
+
+impl TryFrom<&[u8]> for Frame { type Error = FrameError; /* parse */ }
+```
+
+A tuple is fine for two inputs; give the input a named struct when there
+are more or when the pair recurs. Keep an inherent method only as a thin
+alias when discoverability matters, and implement it by calling the trait.
+
 ### Sealed traits and `#[non_exhaustive]` [C-SEALED, C-STRUCT-PRIVATE]
 
 ```rust
@@ -275,13 +302,93 @@ beyond counters.
 
 ## Modules and crates [Items 22–26]
 
-- `pub(crate)` by default; `pub` is a promise.
+### Crates are the unit of design and of compilation
+
+A workspace of small crates compiles in parallel, recompiles only what
+changed, and forces an explicit API at every boundary. When a new module
+would hold a cohesive capability (a codec, a client, a parser, a domain
+model), make it a crate under `crates/` and add it to the workspace
+members. Modules are for code that only makes sense inside one crate.
+
+```toml
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.81"
+
+[workspace.dependencies]
+telemetry-codec = { path = "crates/telemetry-codec" }
+```
+
+### Visibility: private by default, children see their ancestors
+
+Rust privacy is lexical: an item is visible in the module that declares it
+and in every descendant. So the parent module is the natural home for
+helpers that several child modules share, with no visibility modifier at
+all.
+
+| Modifier | Use when |
+|---|---|
+| (none) | Default. The item is used here or by child modules |
+| `pub(super)` | A child must expose one item to its parent |
+| `pub(in crate::x)` | A deeper subtree needs it; rare |
+| `pub(crate)` | Genuinely used across unrelated modules of the crate; a smell when frequent |
+| `pub` | Part of the crate API, re-exported from `lib.rs` |
+
+Consumers should see a handful of types and traits at the crate root; the
+module tree itself stays private (`mod codec;` plus `pub use codec::Encode;`).
+
+### `core` and `alloc` first
+
+Import from `core` and `alloc` when the item exists there and from `std`
+only for OS facilities. Nothing changes for `std` users, and a crate written
+this way becomes `no_std` with a `#![cfg_attr(not(feature = "std"), no_std)]`
+line instead of a rewrite.
+
+| Prefer | Instead of |
+|---|---|
+| `core::fmt`, `core::error::Error`, `core::str::FromStr`, `core::num::NonZero`, `core::ffi::{CStr, c_char}`, `core::cell`, `core::mem`, `core::ops`, `core::iter` | the same paths under `std::` |
+| `alloc::vec::Vec`, `alloc::string::String`, `alloc::boxed::Box`, `alloc::sync::Arc`, `alloc::collections::BTreeMap`, `alloc::ffi::CString`, `alloc::borrow::Cow` | the same paths under `std::` |
+| `std::{fs, net, thread, env, process, io, time::SystemTime, collections::HashMap, sync::Mutex}` | these have no `core`/`alloc` home |
+
+In a crate without `#![no_std]`, `extern crate alloc;` is still needed to
+name `alloc::` paths.
+
+### The rest
+
 - One concept per module; `foo.rs` plus `foo/` subdirectory (not `foo/mod.rs`).
 - Prelude modules only for traits users must import to call methods.
 - Binaries: thin `main.rs` calling into `lib.rs`, so the logic is testable.
 - Re-export dependency types that appear in your public API
   (`pub use bytes::Bytes;`).
 - Features are additive and named after what they add (`serde`, `tokio`).
+
+## Macros [Item 28]
+
+Macros defeat the LSP, hide control flow and slow compilation, so they come
+after traits, generics, blanket impls and const generics. The one case a
+`macro_rules!` earns its place is repetition the type system cannot
+express, such as implementing a trait for every integer type:
+
+```rust
+macro_rules! impl_encode_int {
+    (20 20 12 61 79 80 81 701 33 98 100 204 250 395 398 399 400 702:ty),* 20 20 12 61 79 80 81 701 33 98 100 204 250 395 398 399 400 702,)?) => {20 20 12 61 79 80 81 701 33 98 100 204 250 395 398 399 400 702
+        impl Encode for  {
+            fn encode(&self, out: &mut Vec<u8>) { out.extend_from_slice(&self.to_be_bytes()); }
+        }
+    )*};
+}
+impl_encode_int!(u8, u16, u32, u64, i8, i16, i32, i64);
+```
+
+Keep the macro private to its module, keep its body a plain `impl`, and
+expand it with `cargo expand` when debugging. Do not add a proc-macro crate
+to a project: it adds a compilation unit that every dependent waits on and
+code that nobody can jump into. Consuming derives from existing
+dependencies (`serde`, `thiserror`, `clap`) is fine.
 
 ## Testing shapes [Item 30]
 
@@ -292,3 +399,8 @@ beyond counters.
 - Property tests (`proptest`) for parsers, codecs, arithmetic; snapshot tests
   (`insta`) for rendered output; fuzzing (`cargo fuzz`) for anything that
   parses untrusted bytes.
+- Every test has this crate as its subject. Asserting that `u16::try_from`
+  rejects large values, that `CString::new` rejects an interior NUL, or that
+  `HashMap` returns what was inserted tests `std`, which has its own suite.
+  Test the behaviour you built on top: the wrapper, the parser, the
+  conversion, the error variant.

@@ -179,15 +179,111 @@ Full treatment in `async.md`.
 
 **Looks like:** a trait with one impl, a generic parameter never instantiated
 with a second type, a `Box<dyn Strategy>` for a decision that never changes,
-a `utils` module of one-line wrappers, a workspace of crates for a 2k-line
-program.
+a `utils` module of one-line wrappers.
 
 **Why:** abstractions are promises; unused ones cost compile time, reading
 time and API surface, and Rust's abstractions are hard to remove later.
 
 **Instead:** concrete types and free functions until the second real use
-appears. Prefer small crates only when the boundary is real (Rust Design
-Patterns, "Prefer small crates").
+appears. Note the opposite rule for crates: splitting a workspace into small
+crates is not premature abstraction, it is how Rust compiles in parallel
+(Rust Design Patterns, "Prefer small crates").
+
+## Ad-hoc conversion functions
+
+**Looks like:** `fn make_frame(h: Header, p: Payload) -> Result<Frame, E>`,
+`Frame::from_parts(..)`, `fn header_of(f: &Frame) -> Header`, `fn
+parse_frame(bytes: &[u8]) -> Result<Frame, E>` as the only way to convert.
+
+**Why:** the body is field shuffling; a name invented per pair hides that
+from readers and from the compiler, and callers lose `?`, `.into()`,
+`collect::<Result<_, _>>()` and generic code bounded on `TryFrom`.
+
+**Instead:** `impl TryFrom<(Header, Payload)> for Frame`, `impl From<&Frame>
+for Header`, `impl TryFrom<&[u8]> for Frame` (and `FromStr` for text). Keep
+an inherent alias only when discoverability matters, implemented via the
+trait.
+
+## Hidden allocation and fallibility behind a prettier signature
+
+**Looks like:**
+
+```rust
+pub fn new(name: &str) -> Result<Self, Error> {
+    let name = CString::new(name)?;   // allocation + possible error, invisible to the caller
+    // ...
+}
+```
+
+Also `fn open(path: &str)` that builds a `PathBuf`, setters taking `&str`
+that allocate a `String` per call in a hot loop.
+
+**Why:** the signature promises a cheap borrow and delivers an allocation
+and a failure mode the caller cannot avoid or amortise. The C side wants a
+C string; the Rust type for that already exists.
+
+**Instead:** take the boundary type: `&CStr` (or `impl AsRef<CStr>`),
+`&Path`, the validated newtype. The caller converts once, sees the error,
+and can reuse the buffer. Offer a `&str` convenience only as a separately
+named method (`new_str`) that documents the allocation.
+
+## `std::` paths for `core` and `alloc` items
+
+**Looks like:** `use std::fmt;`, `use std::error::Error;`, `std::ffi::CStr`,
+`std::collections::BTreeMap` in a crate that never touches the OS.
+
+**Why:** the item lives in `core` or `alloc`; naming it through `std` ties
+the crate to `std` for nothing and makes a later `no_std` port a diff of
+every import. See the table in `patterns.md`.
+
+**Instead:** `core::fmt`, `core::error::Error`, `core::ffi::CStr`,
+`alloc::collections::BTreeMap`, with `extern crate alloc;` where needed.
+`std` only for `fs`, `net`, `thread`, `env`, `process`, `io`, `HashMap`,
+`Mutex`, `SystemTime`.
+
+## A module where a crate would do, and `pub(crate)` everywhere
+
+**Looks like:** `mod codec;` with 800 lines inside the application crate;
+`pub(crate) fn helper()` on every function in a module that only its
+parent and siblings use.
+
+**Why:** a module recompiles with its crate and shares its dependency set;
+a crate compiles in parallel and has a reviewed API. `pub(crate)` on
+helpers is noise: child modules already see their ancestors, so the
+helper belongs in the parent, private.
+
+**Instead:** new capability, new crate under `crates/`. Private by
+default; `pub(super)` for a child-to-parent export; `pub` only for the API
+re-exported at the root.
+
+## Macro abuse [Item 28]
+
+**Looks like:** a proc-macro crate added for one derive; `macro_rules!`
+generating whole modules, match arms or functions that a trait, generic
+or const generic would express; macros to save typing a few lines.
+
+**Why:** macros are opaque to rust-analyzer and to readers, every
+dependent waits on the proc-macro crate, and errors point into expansions.
+
+**Instead:** traits with blanket impls, generics, const generics,
+`impl Trait`. A single private `macro_rules!` for "implement this trait for
+each of these types" is the accepted exception. Derives from existing
+dependencies are fine to consume.
+
+## Tests that test the standard library
+
+**Looks like:** `assert!(u16::try_from(70_000usize).is_err())`,
+`assert!(CString::new("a\0b").is_err())`, a test that a `HashMap` returns
+what was inserted, a test that `serde_json` round-trips a struct with only
+derives on it.
+
+**Why:** they pass regardless of your code and cost reading and CI time;
+`std` and the dependency have their own suites.
+
+**Instead:** test the behaviour this crate adds: the wrapper returns the
+typed error on a C failure, the parser rejects trailing bytes, the
+conversion maps the fields. If you cannot name what of yours a test
+exercises, delete it.
 
 ## Feature misuse [Item 26]
 

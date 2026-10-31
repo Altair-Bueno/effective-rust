@@ -61,15 +61,44 @@ guarantee.
 ## Verification
 
 ```sh
-rustup +nightly component add miri
-cargo +nightly miri test            # detects UB in tests
+cargo +nightly miri test            # detects UB in tests (ask before installing Miri)
 cargo +nightly miri test -- --many-seeds   # for concurrency
 RUSTFLAGS="-Zsanitizer=address" cargo +nightly test --target <host>
 cargo fuzz run <target>             # for anything parsing untrusted bytes
 ```
 
-Miri is slow but non-negotiable for new `unsafe`. Write tests that exercise
+Miri is slow but non-negotiable for new `unsafe`. If the component or
+nightly is missing, ask the user before installing anything; toolchain
+changes are theirs to make. Write tests that exercise
 the boundaries (empty, max len, overlapping ranges, zero-sized types).
+
+## Boundary types: do not hide the conversion [Item 34]
+
+The safe wrapper's job is to make the C contract explicit, not to make it
+look like idiomatic Rust at the cost of hidden work. If the C function takes
+a C string, the safe signature takes `&CStr`:
+
+```rust
+impl Stuff {
+    pub fn new(name: &CStr) -> Result<Self, Error> {
+        // SAFETY: `name` is a valid NUL-terminated string for the duration of the call.
+        let raw = unsafe { sys::stuff_new(name.as_ptr()) };
+        NonNull::new(raw).map(|raw| Self { raw }).ok_or(Error::Rejected)
+    }
+}
+
+// caller
+let name = CString::new(name)?;      // the allocation and its error are visible here
+let stuff = Stuff::new(&name)?;
+```
+
+A `&str` parameter that calls `CString::new` inside hides an allocation and
+an error path in a signature that promises a borrow. The same applies to
+`&Path` versus `&str`, `&[u8]` versus `&str`, and validated newtypes versus
+raw integers. If a `&str` convenience is wanted, add it as a separately
+named method that documents the allocation, next to the `&CStr` one, never
+instead of it. Use `core::ffi::{CStr, c_char, c_int}` and
+`alloc::ffi::CString`; they do not need `std`.
 
 ## FFI [Items 34, 35]
 

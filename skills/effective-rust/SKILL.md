@@ -38,8 +38,8 @@ order and stop at the first hit:
    MSRV, transitive size (`cargo tree -p <crate>`), and copy the project's
    `default-features = false` convention if it uses one. Say in your summary
    that you added it and why.
-4. **Write it**, as small as possible, `pub(crate)` unless it is part of the
-   API, next to its only call site, with a test.
+4. **Write it**, as small as possible, private unless it is part of the API,
+   next to its only call site, with a test.
 
 Treat "I will just write a quick version" as a signal to run the lookup, not
 to skip it.
@@ -74,6 +74,23 @@ to skip it.
   collections, plugin boundaries or smaller binaries.
 - If the item is `pub` in a library, you are designing an API: read
   `references/api-design.md` first.
+- A function whose whole job is turning `A` (and maybe `B`) into `C` is a
+  conversion: implement `From` or `TryFrom` (on a tuple or a small input
+  struct) instead of a free function. Callers get `?`, `into()` and
+  `collect` for free, and the compiler finds every conversion site.
+- Starting a new module? Consider a new crate in the workspace instead. A
+  crate is the unit of parallel compilation and of API design: small crates
+  compile faster and force you to decide what is public. Keep modules for
+  code that only makes sense inside one crate.
+- Visibility is private by default. Child modules already see everything in
+  their ancestors, so shared helpers live in the parent, unmarked. Use
+  `pub(super)` when a parent needs a child item, `pub(crate)` only for
+  genuinely crate-wide items, and `pub` only for the few items that are the
+  crate's API, re-exported from `lib.rs`.
+- Traits, generics, blanket impls and const generics come before macros. A
+  `macro_rules!` is justified for repetition the type system cannot express
+  (implementing a trait for every integer type). Do not add proc-macro
+  crates; using derive macros from existing dependencies is fine.
 
 ### Implement
 
@@ -82,6 +99,15 @@ to skip it.
   `match`, `let else` and `matches!` to boilerplate.
 - Match exhaustively on enums you own. A `_ =>` arm hides the next variant's
   bug from the compiler.
+- Import from `core` and `alloc` when the item lives there (`core::fmt`,
+  `core::error::Error`, `core::ffi::CStr`, `alloc::vec::Vec`,
+  `alloc::string::String`). Reach for `std` only for OS facilities: `fs`,
+  `net`, `thread`, `env`, `process`, `io`, `SystemTime`. It costs nothing in
+  a `std` crate and keeps the code usable from `no_std` users.
+- Do not hide allocation or fallibility behind a prettier signature. At a
+  boundary, take the well-formed type the callee needs (`&CStr`, `&Path`,
+  `Port`) and let the caller convert. A `&str` parameter that runs
+  `CString::new` inside hides both an allocation and an error.
 - `unwrap()`, `expect()`, `panic!`, `todo!` and `unimplemented!` stay out of
   non-test code unless the invariant is locally provable; then write
   `expect("<why this cannot fail>")`.
@@ -105,6 +131,13 @@ cargo doc --no-deps   # when you touched public docs
 
 - Use the project's exact flags from CI if they differ from the above.
 - Fixing a bug: write the failing test first, then make it pass.
+- Test your code, not your dependencies. A test asserting that
+  `u16::try_from(70_000)` fails or that `CString::new` rejects interior NULs
+  tests the standard library, which is already tested. Every test exercises
+  a behaviour of this crate.
+- `cargo fmt` and `cargo clippy --all-targets` run after the last edit, not
+  only before it. Clippy finds the shape smells this skill lists; fmt keeps
+  the diff reviewable.
 - Crate has features: also run `--no-default-features` and `--all-features`
   for the touched crate (`cargo hack --feature-powerset` if installed).
 - Workspace: scope with `-p <crate>` while iterating, run `--workspace` before
@@ -129,10 +162,12 @@ prevents the most common mistake for that task. Full URLs live in
 
 | Before you... | Read first |
 |---|---|
+| Write a conversion between your own types | Conversions section of `references/patterns.md`; Effective Rust Item 5 |
 | Design or change a `pub` API in a library | `references/api-design.md`; Rust API Guidelines checklist; RFC 1105 (API evolution), RFC 344 and 199 (naming); Effective Rust Items 1–13, 22–24 |
 | Define an error type or choose an error strategy | `references/errors.md`; Effective Rust Item 4; `thiserror` and `anyhow` docs |
 | Add a dependency | `references/already-exists.md`; blessed.rs; the crate's docs.rs page; Effective Rust Items 25–26 |
 | Call a crate API you have not used in this session | Its docs.rs page at the version pinned in `Cargo.lock`. Never guess method names or signatures |
+| Write a safe wrapper over C or OS APIs | Boundary types section of `references/unsafe-ffi.md` |
 | Write `unsafe`, FFI, `#[repr]`, raw pointers or `transmute` | `references/unsafe-ffi.md`; the Rustonomicon; Unsafe Code Guidelines; then run Miri |
 | Write async code, spawn tasks, use `select!`, pick a runtime | `references/async.md`; Tokio tutorial; "Async: What is blocking?"; `tokio::select!` cancellation-safety docs |
 | Share state across threads, use atomics or locks | `std::sync` docs; Rust Atomics and Locks; Effective Rust Item 17 |
@@ -171,6 +206,8 @@ Details and snippets in `references/patterns.md`.
 - **`let else`**, `matches!`, `if let .. else`, let chains (edition 2024) for
   shallow control flow.
 - **`impl Trait` in return position** to hide iterator and future types.
+- **`From` / `TryFrom` for every conversion** between your own types, including
+  `TryFrom<(A, B)>` when `C` is built from two inputs.
 - **Sealed traits** and `#[non_exhaustive]` so the public API can grow.
 - **`Cow<'_, str>`** when a function usually borrows but sometimes must own.
 - **`Arc<str>` / `Box<str>` / `Box<[T]>`** for immutable shared data.
@@ -182,6 +219,8 @@ Details and snippets in `references/patterns.md`.
   structs.
 - **Thin `main`**: binaries put logic in `lib.rs` and keep `main.rs` to
   argument parsing and `fn main() -> anyhow::Result<()>`.
+- **Workspaces of small crates**: one crate per cohesive capability, private
+  by default, `core`/`alloc` imports so they stay `no_std`-friendly.
 
 ## 5. Anti-patterns to refuse
 
@@ -217,6 +256,15 @@ Details and the replacement for each in `references/anti-patterns.md`.
 - `_ =>` arms on enums you own; `#[inline]` sprinkled without a benchmark.
 - Traits and generics with a single implementation, introduced "for
   flexibility".
+- Ad-hoc `make_c(a, b)` or `C::from_parts(a, b)` functions where `From` or
+  `TryFrom` is the whole story.
+- `&str` parameters that silently allocate a `CString`, `PathBuf` or `String`
+  inside; the caller should see the allocation and the error.
+- `std::` paths for items that live in `core` or `alloc`.
+- A new module where a new workspace crate would do; `pub(crate)` on helpers
+  that only the parent and its children use.
+- Proc macros, or `macro_rules!` for anything a trait or generic can express.
+- Tests whose subject is `std` or a dependency rather than this crate.
 - Non-additive cargo features and features that remove functionality
   (`no-std`, `no-serde`).
 

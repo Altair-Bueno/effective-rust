@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: workspace-crate-visibility-macros
+expected_outcome: |
+  The codec becomes its own crate in the workspace (for example
+  crates/telemetry-codec) that the telemetry crate depends on, rather than a
+  module buried inside telemetry. The integer family is covered either by a
+  single declarative macro_rules! invocation or by a generic impl over a
+  small sealed trait; no proc-macro crate is created. Visibility is private
+  by default: only the traits, the error type and necessary re-exports are
+  pub, and pub(crate) is not sprinkled across helpers. Imports come from
+  core/alloc where the items exist there. Tests cover round-trips and error
+  paths and do not test std. fmt and clippy were run.
+context:
+  scaffold_script: place-files.sh

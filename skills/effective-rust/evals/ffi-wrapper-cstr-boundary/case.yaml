@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: ffi-wrapper-cstr-boundary
+expected_outcome: |
+  The safe wrapper takes the well-formed boundary type: constructors and
+  setters accept &CStr (or impl AsRef<CStr>) so the caller owns the CString
+  allocation and its possible NUL error, instead of a &str parameter that
+  hides CString::new inside. Imports use core::ffi / alloc::ffi rather than
+  std where the item exists there. Every unsafe block has a SAFETY comment,
+  Drop frees the handle, the C status code maps to a typed error, tests
+  exercise the wrapper (round-trip, error on failure, drop) and do not test
+  CString/CStr themselves, visibility is private by default with a small pub
+  surface, and cargo fmt and clippy were run.
+context:
+  scaffold_script: place-files.sh

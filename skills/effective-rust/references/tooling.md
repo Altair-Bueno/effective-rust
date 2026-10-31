@@ -70,8 +70,11 @@ workspace = true
   `rustup default` in a project.
 - `rust-version` in `Cargo.toml` is the MSRV. With resolver 3 (edition 2024)
   cargo picks dependency versions compatible with it. Check with
-  `cargo msrv verify` if the tool is installed, otherwise compile with
-  `cargo +1.xx.0 check`.
+  `cargo msrv verify` if the tool is installed, or `cargo +1.xx.0 check` if
+  that toolchain is already installed (`rustup toolchain list`). Running
+  `cargo +1.xx.0` for a missing toolchain makes rustup download it, which
+  is an install: ask first. Otherwise rely on `clippy.toml`'s `msrv` and the
+  "since" badges on docs.rs.
 - Check since when an API is stable before using it:
   https://doc.rust-lang.org/stable/releases.html or the "since" badge on
   docs.rs/std.
@@ -124,13 +127,23 @@ Habits:
 ## Code navigation and search
 
 - LSP (`rust-analyzer`): hover for types, go-to-definition, references,
-  rename. Prefer it to grepping for identifiers.
+  rename, diagnostics. If the LSP tool is listed as deferred, load it at the
+  start of the session (`ToolSearch` with `select:LSP`) and check
+  `rust-analyzer --version`. Prefer it to grepping for identifiers and to
+  guessing signatures.
 - `ast-grep --lang rust -p 'fn $NAME($$$ARGS) -> Result<$T, String>'` for
   structural searches (find every function returning a `String` error).
 - `rg` for text; `fd` for files.
 - `cargo expand <path::to::item>` to see macro output.
 - `cargo doc --open` for the dependency graph's docs offline; docs.rs for
   the pinned version.
+
+## Installing tools
+
+Never install toolchains, components (`rustup component add`), or cargo
+subcommands (`cargo install`) on your own. Check what is present
+(`rustup component list --installed`, `which cargo-nextest`), use what is
+there, and ask the user before adding anything.
 
 ## Release hygiene
 
