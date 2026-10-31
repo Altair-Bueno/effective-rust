@@ -189,7 +189,9 @@ Full treatment in `async.md`.
 - `_ =>` on an enum you own: name the variants so the compiler flags new ones.
 - `#[inline]` everywhere: let LLVM decide; add it only after a benchmark or
   for tiny cross-crate generics.
-- `impl Into<String>` on every parameter: hides allocations, hurts inference.
+- `impl Into<String>` on a parameter that is only read (forces an allocation
+  `&str` avoids) or on every internal function (inference noise); it belongs
+  on owned inputs at API boundaries, where it lets the caller choose.
 - `Option<Option<T>>`, `Result<Option<T>, E>` juggled by hand: `flatten`,
   `transpose`.
 - `println!` in a library: use `tracing`/`log`, return data, let the binary

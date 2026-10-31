@@ -75,7 +75,9 @@ to skip it.
   syscall, a lock, a copy, a hash) and the signature decides who pays it.
   Let the caller decide. Input you only read: borrow (`&str`, `&[T]`,
   `&Path`). Input you keep, extend or transform: take it by value, so the
-  caller's existing allocation and its spare capacity do the work. Output
+  caller's existing allocation and its spare capacity do the work; make it
+  `impl Into<T>` when callers may hold either form, so an existing `T` moves
+  in free and others opt into the conversion at the call site. Output
   the caller will reuse: fill `&mut Vec<u8>`, `&mut String` or `impl Write`.
   Sequences: return `impl Iterator` and let the caller collect, count or
   stop early. A cost hidden inside a convenient signature is one the caller
@@ -224,9 +226,10 @@ Details and snippets in `references/patterns.md`.
   Use `bon` or `typed-builder` if the project already depends on one.
 - **RAII guards** (`Drop`) for anything that must be released or restored.
 - **`Default` derive** plus `..Default::default()` struct update syntax.
-- **Caller-controlled resources**: borrow to read, take by value to keep or
-  extend, take `&mut` buffers or `impl Write` to fill, return `impl Iterator`
-  to let the caller decide what to materialise (C-CALLER-CONTROL).
+- **Caller-controlled resources**: borrow to read, take by value (or
+  `impl Into<T>`) to keep or extend, take `&mut` buffers or `impl Write` to
+  fill, return `impl Iterator` to let the caller decide what to materialise
+  (C-CALLER-CONTROL).
 - **`mem::take` / `mem::replace` / `Option::take`** to move out of `&mut`
   without cloning.
 - **Entry API** (`map.entry(k).or_insert_with(..)`) instead of get-then-insert.

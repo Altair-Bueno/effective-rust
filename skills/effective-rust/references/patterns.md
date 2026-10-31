@@ -152,6 +152,7 @@ injection lets the caller pick the implementation.
 |---|---|---|
 | Only read the input | `&str`, `&[T]`, `&Path`, `&T` | Every owned type derefs to these; the caller keeps whatever storage it has |
 | Keep the input | `String`, `Vec<T>`, `T` by value | It moves in; no clone, no second allocation |
+| Keep the input, callers hold either form | `impl Into<String>` | An existing `String` moves in free; a `&str` caller opts into the allocation at the call site |
 | Extend or transform the input and hand it back | `mut s: String` in, `String` out | Reuses the allocation and spare capacity the caller already paid for (a request body, a reused buffer) |
 | Fill an output buffer | `&mut Vec<u8>`, `&mut String`, `impl fmt::Write`, `impl io::Write` | The caller reuses buffers across calls and picks the sink |
 | Produce a sequence | `impl Iterator<Item = ..>` | The caller decides to collect, count, take the first, or stop early |
@@ -183,11 +184,36 @@ them. This is not Item 20's premature optimisation; measuring still comes
 before tuning. It is refusing to pay twice for what the caller already
 paid once.
 
-### `impl AsRef` and `impl Into` at the boundary
+### `impl Into<T>` and `impl AsRef<T>`: the convenience path on top of the free one
 
-`fn open(path: impl AsRef<Path>)` is the std convention for paths.
-`impl Into<String>` is worth it only for setters that store the string;
-elsewhere it hides allocation and hurts inference.
+`impl Into<T>` is inversion of control through a trait. When the function
+needs an owned `T` anyway, taking `impl Into<T>` keeps the zero-cost path
+(a caller with a `String` moves it in, `.into()` is the identity) and adds
+an opt-in one (a caller with a `&str` pays for the allocation, at the call
+site, where it is visible). The callee never decides to allocate; it only
+accepts what the caller chose.
+
+```rust
+pub fn name(mut self, name: impl Into<String>) -> Self {
+    self.name = name.into();
+    self
+}
+```
+
+Rules that keep it honest:
+
+- Only on inputs you keep or build on. On an input you only read it forces
+  an allocation that `&str` would not.
+- Only for infallible, cheap-to-skip conversions. A fallible or expensive
+  one stays with the caller (`&CStr` rather than `impl TryInto<CString>`).
+- Public API boundaries, builders and constructors, not every internal
+  function: each generic instantiation is a monomorphised copy, and
+  `x.into()` chains lose type inference.
+
+`impl AsRef<T>` is the borrowed-side twin: `fn open(path: impl AsRef<Path>)`
+accepts `&str`, `String`, `&Path` and `PathBuf` without any conversion cost.
+Use it for reads where several borrowed forms are common; plain `&Path` or
+`&str` is fine when callers hold one type.
 
 ### Move out without cloning
 
