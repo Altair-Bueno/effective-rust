@@ -28,7 +28,9 @@ cargo doc --no-deps                       # when public docs changed
 ## Lint configuration
 
 Put lint levels in `Cargo.toml`, not in source attributes, so they apply to
-every target and are visible in one place.
+every target and are visible in one place. The full baseline this skill
+expects, with the reason for each entry and the matching `clippy.toml`, is
+in `lints.md`; the block below is the short form.
 
 ```toml
 [workspace.lints.rust]
@@ -94,8 +96,15 @@ cargo machete                      # unused dependencies
 
 - Commit `Cargo.lock` for binaries and libraries alike; the Cargo FAQ now
   recommends it for both.
-- Workspace dependencies live in `[workspace.dependencies]`; crates use
-  `dep = { workspace = true }`.
+- Dependencies live once in `[workspace.dependencies]`, declared with
+  `default-features = false`; crates use `dep = { workspace = true,
+  features = ["only", "what", "they", "use"] }`. Members cannot remove a
+  default the root enabled, so the root is the strict one. Single crates
+  apply the same rule in `[dependencies]`. `cargo tree -e features -p <crate>`
+  shows which features are actually on.
+- Binary size and release profile: https://github.com/johnthagen/min-sized-rust
+  (strip, `opt-level = "z"`, LTO, `codegen-units = 1`, `panic = "abort"`),
+  worth reading even when size is not the top priority.
 
 ## Testing
 

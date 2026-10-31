@@ -96,17 +96,22 @@ already wrote their own wrapper.
 `Display`. Never `as` between numeric types unless the conversion is
 provably lossless or you intend the wrap and say so with `wrapping_*`.
 
-When you catch yourself writing `fn make_frame(h: Header, p: Payload) ->
-Result<Frame, E>` or `Frame::from_parts(..)`, the function is a conversion:
-its body moves fields from the inputs into the output. Express it as the
-trait so every caller gets `?`, `.into()`, `.try_into()` and
-`collect::<Result<Vec<_>, _>>()` for free, and so the compiler can find
-every conversion site.
+When you catch yourself writing `fn header_of(f: &Frame) -> Header`,
+`fn parse_frame(bytes: &[u8]) -> Result<Frame, E>` or `Frame::from_bytes`,
+the function is a conversion: one input, one output type, a body that moves
+fields across. Express it as the trait so every caller gets `?`, `.into()`,
+`.try_into()`, `.parse()` and `collect::<Result<Vec<_>, _>>()` for free,
+and so the compiler can find every conversion site.
+
+Assembling a value from several independent parts is construction, not
+conversion. `Frame::new(header, payload) -> Result<Frame, E>` is the right
+shape for that; `TryFrom<(Header, Payload)>` would only hide a constructor
+behind a tuple. Use the trait when the pair is a real unit (a type of its
+own), the constructor otherwise.
 
 ```rust
-impl TryFrom<(Header, Payload)> for Frame {
-    type Error = FrameError;
-    fn try_from((header, payload): (Header, Payload)) -> Result<Self, Self::Error> {
+impl Frame {
+    pub fn new(header: Header, payload: Payload) -> Result<Self, FrameError> {
         let len = u16::try_from(payload.body.len()).map_err(|_| FrameError::TooLong)?;
         Ok(Self { version: header.version, flags: header.flags, len, body: payload.body })
     }
@@ -119,9 +124,8 @@ impl From<&Frame> for Header {
 impl TryFrom<&[u8]> for Frame { type Error = FrameError; /* parse */ }
 ```
 
-A tuple is fine for two inputs; give the input a named struct when there
-are more or when the pair recurs. Keep an inherent method only as a thin
-alias when discoverability matters, and implement it by calling the trait.
+Keep an inherent alias (`frame.header()`) only when discoverability
+matters, and implement it by calling the trait so there is one body.
 
 ### Sealed traits and `#[non_exhaustive]` [C-SEALED, C-STRUCT-PRIVATE]
 
@@ -365,6 +369,27 @@ name `alloc::` paths.
 - Re-export dependency types that appear in your public API
   (`pub use bytes::Bytes;`).
 - Features are additive and named after what they add (`serde`, `tokio`).
+  Before adding one for optional behaviour, consider a companion crate
+  (`foo-tokio`, `foo-serde`) or a refactor: a crate has its own tests, docs
+  and semver, a feature is a global switch nobody can test in isolation.
+  Keep features for small optional trait impls; use crates for whole
+  integrations (a runtime, a backend, a wire format).
+- Dependencies live once in `[workspace.dependencies]` with
+  `default-features = false`; each crate adds `workspace = true` and the
+  features it actually uses. A root that leaves defaults on cannot be
+  overridden by members, so the root must be the strict one. Single crates
+  apply the same rule in `[dependencies]`.
+
+### Code conventions
+
+- `Self` instead of the type name inside `impl` blocks, in return types,
+  constructors and patterns (`Self { .. }`, `Self::Variant`). Renames become
+  one-line diffs. Lint: `clippy::use_self`.
+- Traits imported only for their methods come in as `use std::io::Write as _;`.
+  The name stays out of scope, no collision with a local `Write`, and the
+  import reads as "I need the methods". Lint: `clippy::unused_trait_names`.
+- `core::` and `alloc::` paths; `foo.rs` plus `foo/` rather than `mod.rs`;
+  `Arc::clone(&x)` rather than `x.clone()` on reference-counted pointers.
 
 ## Macros [Item 28]
 

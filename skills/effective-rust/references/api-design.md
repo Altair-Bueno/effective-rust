@@ -120,6 +120,9 @@ read the Cargo reference for the long tail of cases.
 
 ## Features [Item 26, Cargo features reference]
 
+- First ask whether a companion crate (`foo-tokio`, `foo-serde`) or a
+  refactor serves better than a feature. Crates are testable, documentable
+  and versionable on their own; features are global switches.
 - Additive only: enabling a feature never removes or changes behaviour.
 - Named after what they add: `serde`, `tokio`, `std` (for `no_std` crates the
   convention is a `std` feature that is on by default).

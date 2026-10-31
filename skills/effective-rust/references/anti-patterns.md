@@ -191,18 +191,62 @@ crates is not premature abstraction, it is how Rust compiles in parallel
 
 ## Ad-hoc conversion functions
 
-**Looks like:** `fn make_frame(h: Header, p: Payload) -> Result<Frame, E>`,
-`Frame::from_parts(..)`, `fn header_of(f: &Frame) -> Header`, `fn
-parse_frame(bytes: &[u8]) -> Result<Frame, E>` as the only way to convert.
+**Looks like:** `fn header_of(f: &Frame) -> Header`, `Frame::from_bytes(..)`,
+`fn parse_frame(bytes: &[u8]) -> Result<Frame, E>`, `fn to_dto(&self) ->
+Dto` as the only way to convert one value into another type.
 
 **Why:** the body is field shuffling; a name invented per pair hides that
 from readers and from the compiler, and callers lose `?`, `.into()`,
-`collect::<Result<_, _>>()` and generic code bounded on `TryFrom`.
+`.parse()`, `collect::<Result<_, _>>()` and generic code bounded on
+`TryFrom`.
 
-**Instead:** `impl TryFrom<(Header, Payload)> for Frame`, `impl From<&Frame>
-for Header`, `impl TryFrom<&[u8]> for Frame` (and `FromStr` for text). Keep
-an inherent alias only when discoverability matters, implemented via the
-trait.
+**Instead:** `impl From<&Frame> for Header`, `impl TryFrom<&[u8]> for
+Frame`, `impl FromStr for Frame`. Keep an inherent alias only when
+discoverability matters, implemented via the trait. Assembling from several
+independent parts is a constructor (`Frame::new(header, payload)`), not a
+`TryFrom` on a tuple.
+
+## Default features left on
+
+**Looks like:** `tokio = "1"`, `reqwest = "0.12"` in a member crate; the
+same dependency declared in three crates with three feature lists.
+
+**Why:** default features drag in code nobody asked for (TLS backends,
+runtimes, codecs), inflate build time and binary size, and three
+declarations drift. Members cannot turn off a default the workspace root
+enabled.
+
+**Instead:** declare each dependency once in `[workspace.dependencies]`
+with `default-features = false`; members use `workspace = true` plus the
+features they need. Single crates: `default-features = false` and an
+explicit feature list in `[dependencies]`. See
+https://github.com/johnthagen/min-sized-rust for the rest of the size
+toolkit.
+
+## A feature where a crate would do
+
+**Looks like:** `features = ["tokio"]`, `["async-std"]`, `["postgres"]`
+switching whole integrations inside one crate, with `#[cfg(feature)]`
+sprinkled through the modules.
+
+**Why:** features are additive, global across the dependency graph and
+not testable in isolation; a crate per integration (`foo-tokio`,
+`foo-postgres`) has its own tests, docs, semver and dependency set.
+
+**Instead:** a companion crate, or a refactor that makes the integration a
+trait implemented in a separate crate. Keep features for small optional
+trait impls such as `serde`.
+
+## Spelling the type name, importing traits by name
+
+**Looks like:** `impl Frame { fn new() -> Frame { Frame { .. } } }`;
+`use std::io::Write;` when only `write_all` is called.
+
+**Why:** a rename touches every line; a named trait import pollutes the
+namespace and collides with local names. Clippy has `use_self` and
+`unused_trait_names` for both.
+
+**Instead:** `Self` everywhere inside the `impl`; `use std::io::Write as _;`.
 
 ## Hidden allocation and fallibility behind a prettier signature
 

@@ -56,6 +56,11 @@ to skip it.
   dependencies and their feature flags. Read `clippy.toml`, `rustfmt.toml`,
   `deny.toml`, `.config/nextest.toml` and the CI workflow. They tell you which
   commands must pass and which lints are errors.
+- No `[lints]` table? Add the baseline from `references/lints.md` to the root
+  `Cargo.toml` before writing code, tell the user, and fix what clippy then
+  reports in the code you touch. Those lints enforce half of this skill
+  (`core` over `std`, `Self`, `as _`, no `unwrap`, no `allow`, documented
+  `unsafe`); working without them means relearning it in review.
 - Check `rust-analyzer --version`. When the LSP tool is available, use it for
   hover, go-to-definition, references and diagnostics instead of guessing
   signatures. `cargo check` is the fallback, not the first resort.
@@ -74,10 +79,16 @@ to skip it.
   collections, plugin boundaries or smaller binaries.
 - If the item is `pub` in a library, you are designing an API: read
   `references/api-design.md` first.
-- A function whose whole job is turning `A` (and maybe `B`) into `C` is a
-  conversion: implement `From` or `TryFrom` (on a tuple or a small input
-  struct) instead of a free function. Callers get `?`, `into()` and
-  `collect` for free, and the compiler finds every conversion site.
+- A function whose whole job is turning one value into another type is a
+  conversion: implement `From`, `TryFrom` or `FromStr` instead of
+  `to_frame()`, `frame_from(..)` or `parse_frame(..)`. Callers get `?`,
+  `into()` and `collect` for free, and the compiler finds every conversion
+  site. Assembling a value from several independent parts is construction,
+  not conversion: `Frame::new(header, payload)` or a builder is right there.
+- Before adding a cargo feature for optional behaviour, consider a companion
+  crate (`foo-tokio`, `foo-serde`) or a refactor. Features are global,
+  additive-only and hard to test in isolation; a crate is an ordinary
+  dependency with its own tests and docs.
 - Starting a new module? Consider a new crate in the workspace instead. A
   crate is the unit of parallel compilation and of API design: small crates
   compile faster and force you to decide what is public. Keep modules for
@@ -99,6 +110,15 @@ to skip it.
   `match`, `let else` and `matches!` to boilerplate.
 - Match exhaustively on enums you own. A `_ =>` arm hides the next variant's
   bug from the compiler.
+- Write `Self` instead of the type name inside its `impl` blocks, and import
+  traits used only for their methods as `use foo::Trait as _;`. Both survive
+  renames and keep names out of scope (clippy `use_self`,
+  `unused_trait_names`).
+- Declare dependencies once in `[workspace.dependencies]` with
+  `default-features = false`, and let each crate enable only the features it
+  uses (`tokio = { workspace = true, features = ["rt", "macros"] }`). A
+  single crate does the same in `[dependencies]`. Default features pull in
+  code nobody asked for, and binary size and build time pay for it.
 - Import from `core` and `alloc` when the item lives there (`core::fmt`,
   `core::error::Error`, `core::ffi::CStr`, `alloc::vec::Vec`,
   `alloc::string::String`). Reach for `std` only for OS facilities: `fs`,
@@ -174,6 +194,8 @@ prevents the most common mistake for that task. Full URLs live in
 | Reach for `clone()`, `Rc<RefCell<_>>` or `unsafe` to satisfy the borrow checker | Effective Rust Items 14–15; Rust Design Patterns anti-pattern "Clone to satisfy the borrow checker"; ownership section of `references/patterns.md` |
 | Optimise anything | Rust Performance Book; Effective Rust Item 20; a `criterion`/`divan` benchmark before and after |
 | Write a macro | Effective Rust Item 28; The Little Book of Rust Macros; API Guidelines macros section |
+| Shrink a binary or tune a release profile | min-sized-rust; Cargo profiles reference |
+| Configure lints in a project that has none | `references/lints.md` |
 | Add or change cargo features, bump a version, publish | Cargo features and SemVer references; Effective Rust Items 21, 26; `cargo semver-checks` |
 | Change edition or MSRV | Edition Guide; RFC 3501 (edition 2024); Cargo `rust-version` reference |
 | Write rustdoc | RFC 1574 (conventions) and RFC 1946 (intra-doc links); rustdoc book "What to include"; API Guidelines documentation section |
@@ -206,8 +228,8 @@ Details and snippets in `references/patterns.md`.
 - **`let else`**, `matches!`, `if let .. else`, let chains (edition 2024) for
   shallow control flow.
 - **`impl Trait` in return position** to hide iterator and future types.
-- **`From` / `TryFrom` for every conversion** between your own types, including
-  `TryFrom<(A, B)>` when `C` is built from two inputs.
+- **`From` / `TryFrom` / `FromStr` for every one-to-one conversion** between
+  your own types; `new` and builders for assembling a value from parts.
 - **Sealed traits** and `#[non_exhaustive]` so the public API can grow.
 - **`Cow<'_, str>`** when a function usually borrows but sometimes must own.
 - **`Arc<str>` / `Box<str>` / `Box<[T]>`** for immutable shared data.
@@ -256,8 +278,13 @@ Details and the replacement for each in `references/anti-patterns.md`.
 - `_ =>` arms on enums you own; `#[inline]` sprinkled without a benchmark.
 - Traits and generics with a single implementation, introduced "for
   flexibility".
-- Ad-hoc `make_c(a, b)` or `C::from_parts(a, b)` functions where `From` or
-  `TryFrom` is the whole story.
+- Ad-hoc `to_c()`, `c_from_a()` or `parse_c()` functions where `From`,
+  `TryFrom` or `FromStr` is the whole story.
+- Dependencies with default features left on; features declared per crate
+  instead of once in `[workspace.dependencies]`.
+- A cargo feature where a companion crate (`foo-tokio`) would be cleaner.
+- Spelling the type name inside its own `impl`; importing a trait by name
+  when only its methods are used.
 - `&str` parameters that silently allocate a `CString`, `PathBuf` or `String`
   inside; the caller should see the allocation and the error.
 - `std::` paths for items that live in `core` or `alloc`.
@@ -283,3 +310,4 @@ Read the one that matches the task; each is self-contained.
 | `references/async.md` | tokio, futures, tasks, channels, cancellation, blocking |
 | `references/unsafe-ffi.md` | `unsafe`, raw pointers, `#[repr]`, FFI, Miri |
 | `references/tooling.md` | cargo, clippy configuration, tests, benches, fuzzing, coverage |
+| `references/lints.md` | The lint baseline to enable in a project without one, with reasons |

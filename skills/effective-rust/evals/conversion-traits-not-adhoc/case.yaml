@@ -1,12 +1,13 @@
 schema_version: "1.1"
 name: conversion-traits-not-adhoc
 expected_outcome: |
-  The three operations are expressed through the standard conversion traits:
-  TryFrom<(Header, Payload)> for Frame (or an equivalent TryFrom on a small
-  struct), From<&Frame> for Header (or From<Frame>), and TryFrom<&[u8]> for
-  Frame, with no free-standing make_frame/frame_from_bytes functions
-  duplicating them. The length uses u16::try_from, never `as`. Imports come
-  from core where possible. Tests cover the three conversions and the error
-  paths, and no test targets std behaviour. fmt and clippy were run.
+  The two one-to-one conversions use the standard traits: From<&Frame> for
+  Header (or From<Frame>) and TryFrom<&[u8]> for Frame, with no free-standing
+  header_of/parse_frame functions as the only entry point. Assembling a Frame
+  from a Header and a Payload is a constructor, Frame::new(header, payload)
+  -> Result (TryFrom on the tuple also acceptable), not an ad-hoc free
+  function. The length uses u16::try_from, never `as`. Imports come from core
+  where possible. Tests cover the conversions and the error paths, and no
+  test targets std behaviour. fmt and clippy were run.
 context:
   scaffold_script: place-files.sh

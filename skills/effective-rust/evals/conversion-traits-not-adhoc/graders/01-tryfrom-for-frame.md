@@ -4,4 +4,4 @@ focus: trace
 weight: 1
 ---
 
-Building a Frame from a Header and a Payload is implemented as TryFrom (for the tuple or a small input struct), not as an ad-hoc function such as make_frame or Frame::from_parts that is the only entry point.
+Building a Frame from a Header and a Payload is a constructor, Frame::new(header, payload) -> Result (a TryFrom on the tuple is also acceptable); it is not a free function such as make_frame and it does not appear in two competing forms.

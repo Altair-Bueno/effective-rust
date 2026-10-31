@@ -58,6 +58,9 @@ the sources (see the licence note at the end).
 | RFC 430: naming conventions | https://rust-lang.github.io/rfcs/0430-finalizing-naming-conventions.html | Casing, `as_`/`to_`/`into_` |
 | Clippy lint list | https://rust-lang.github.io/rust-clippy/master/index.html | Understanding a lint before touching it |
 | The Clippy Book | https://doc.rust-lang.org/clippy/ | Configuration, `clippy.toml`, lint groups |
+| Clippy usage and lint groups | https://doc.rust-lang.org/clippy/usage.html | What `all`, `pedantic`, `nursery`, `restriction`, `cargo` contain and how to enable them |
+| Clippy lint configuration | https://doc.rust-lang.org/clippy/lint_configuration.html | Every `clippy.toml` key (`msrv`, `allow-unwrap-in-tests`, thresholds) |
+| rustc lint groups | https://doc.rust-lang.org/rustc/lints/groups.html | `warnings`, `unused`, `rust-2018-idioms`, `future-incompatible` |
 | rustc lints | https://doc.rust-lang.org/rustc/lints/index.html | Compiler lint groups and levels |
 | Diagnostic attributes (`#[expect]`, `#[diagnostic::..]`) | https://doc.rust-lang.org/reference/attributes/diagnostics.html | Lint attributes |
 | Rust Error Codes Index | https://doc.rust-lang.org/error_codes/ | `rustc --explain E0xxx` online |
@@ -69,6 +72,8 @@ the sources (see the licence note at the end).
 | proptest book | https://proptest-rs.github.io/proptest/ | Property-based tests |
 | criterion book | https://bheisler.github.io/criterion.rs/book/ | Benchmarks |
 | cargo-nextest | https://nexte.st/ | Faster test runner (does not run doctests) |
+| min-sized-rust (johnthagen, MIT) | https://github.com/johnthagen/min-sized-rust | Shrinking binaries: profiles, strip, LTO, panic=abort, no_std; useful even when size is secondary |
+| Embark Studios lint baseline | https://github.com/EmbarkStudios/rust-ecosystem/blob/main/lints.rs | A widely copied community set of clippy lint levels to compare `lints.md` against |
 | insta | https://insta.rs/ | Snapshot tests |
 | cargo-deny | https://embarkstudios.github.io/cargo-deny/ | Licence, advisory and duplicate checks |
 | cargo-semver-checks | https://github.com/obi1kenobi/cargo-semver-checks | Detect breaking changes before release |
