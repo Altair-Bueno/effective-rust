@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: async-file-checksums
+expected_outcome: |
+  An async binary that never blocks the tokio runtime: file reads go through
+  tokio::fs or spawn_blocking, the CPU-heavy checksum runs in spawn_blocking
+  (or rayon), concurrency is bounded with a Semaphore, buffer_unordered or a
+  bounded JoinSet loop rather than being sequential or unbounded, Ctrl-C is
+  handled with tokio::signal::ctrl_c plus a CancellationToken or watch channel
+  and in-flight tasks are awaited before exit, errors are reported per file
+  without unwrap, main returns a Result, and cargo clippy --all-targets is
+  clean.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: borrow-checker-inventory-refactor
+expected_outcome: |
+  The refactor removes the clone-to-satisfy-the-borrow-checker pattern: no
+  cloning of Item or Vec<Item> remains in non-test code, index loops become
+  iterator chains, remove_discontinued uses Vec::retain, restock finds items
+  with iter_mut()/find or a map lookup and pushes new ones instead of
+  rebuilding the Vec, low_stock returns borrowed items (impl Iterator<Item =
+  &Item> or Vec<&Item>), total_value is an iterator sum, no Rc<RefCell<_>> or
+  unsafe is introduced, the existing tests pass, and clippy is clean.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: library-config-parser-errors
+expected_outcome: |
+  A library-grade parser: a dedicated error enum implementing std::error::Error
+  (thiserror or manual) whose variants carry the line number and offending key,
+  no Result<_, String> or Box<dyn Error> in the public API, no unwrap/expect/
+  panic on recoverable paths in src/, parsing built on std str APIs (lines,
+  split_once, trim, parse::<u16>) rather than manual character loops, no `as`
+  casts for the port, public items documented with an `# Errors` section,
+  tests for the error cases, `cargo test` and `cargo clippy --all-targets`
+  clean.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,16 @@
+{
+  "name": "effective-rust",
+  "description": "Idiomatic Rust guidance: reuse std and well-known crates instead of reinventing them, patterns and anti-patterns, read-before-you-do resource gates, and the check/clippy/test/fmt workflow.",
+  "version": "0.1.0",
+  "author": {
+    "name": "compux72"
+  },
+  "keywords": [
+    "rust",
+    "cargo",
+    "clippy",
+    "idioms",
+    "best-practices",
+    "guidelines"
+  ]
+}

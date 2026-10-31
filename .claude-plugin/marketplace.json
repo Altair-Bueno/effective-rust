@@ -1,0 +1,16 @@
+{
+  "name": "effective-rust",
+  "owner": {
+    "name": "compux72"
+  },
+  "plugins": [
+    {
+      "name": "effective-rust",
+      "source": "./",
+      "description": "Idiomatic Rust guidance for agents: patterns, anti-patterns, resource gates and workflow.",
+      "version": "0.1.0",
+      "category": "workflow",
+      "keywords": ["rust", "cargo", "clippy", "idioms", "guidelines"]
+    }
+  ]
+}
