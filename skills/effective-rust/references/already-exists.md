@@ -153,7 +153,9 @@ for smart pointers), `Drop`, `ops::{Add, Index, ..}`, `Send`/`Sync`, `Any`,
 
 Check `Cargo.toml` first: a dependency that is already there wins over a
 better-looking new one. Confirm maintenance and MSRV with `cargo info <crate>`
-and docs.rs. Source: https://blessed.rs/crates (keep it open when choosing).
+and docs.rs. The crate names below are common ecosystem knowledge; the
+short notes are this skill's own. Keep https://blessed.rs/crates open when
+choosing between alternatives, it is more complete and more current.
 
 | Need | Reach for | Notes |
 |---|---|---|

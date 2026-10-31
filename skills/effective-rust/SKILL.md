@@ -129,7 +129,7 @@ prevents the most common mistake for that task. Full URLs live in
 
 | Before you... | Read first |
 |---|---|
-| Design or change a `pub` API in a library | `references/api-design.md`; Rust API Guidelines checklist; Effective Rust Items 1–13, 22–24 |
+| Design or change a `pub` API in a library | `references/api-design.md`; Rust API Guidelines checklist; RFC 1105 (API evolution), RFC 344 and 199 (naming); Effective Rust Items 1–13, 22–24 |
 | Define an error type or choose an error strategy | `references/errors.md`; Effective Rust Item 4; `thiserror` and `anyhow` docs |
 | Add a dependency | `references/already-exists.md`; blessed.rs; the crate's docs.rs page; Effective Rust Items 25–26 |
 | Call a crate API you have not used in this session | Its docs.rs page at the version pinned in `Cargo.lock`. Never guess method names or signatures |
@@ -140,12 +140,12 @@ prevents the most common mistake for that task. Full URLs live in
 | Optimise anything | Rust Performance Book; Effective Rust Item 20; a `criterion`/`divan` benchmark before and after |
 | Write a macro | Effective Rust Item 28; The Little Book of Rust Macros; API Guidelines macros section |
 | Add or change cargo features, bump a version, publish | Cargo features and SemVer references; Effective Rust Items 21, 26; `cargo semver-checks` |
-| Change edition or MSRV | Edition Guide; Cargo `rust-version` reference |
-| Write rustdoc | RFC 1574; rustdoc book "What to include"; API Guidelines documentation section |
+| Change edition or MSRV | Edition Guide; RFC 3501 (edition 2024); Cargo `rust-version` reference |
+| Write rustdoc | RFC 1574 (conventions) and RFC 1946 (intra-doc links); rustdoc book "What to include"; API Guidelines documentation section |
 | Write tests, benches, fuzzers | `references/tooling.md`; Effective Rust Item 30; Book ch. 11; proptest, insta, cargo-fuzz books |
 | Choose a collection type | `std::collections` "When should you use which collection?" |
 | Make a library `no_std` | Effective Rust Item 33; Embedded Rust Book |
-| Fail to fix a compiler error on the first try | `rustc --explain E0xxx`; the Rust Error Codes Index |
+| Fail to fix a compiler error on the first try | `rustc --explain E0xxx`; the Rust Error Codes Index; RFC 1023 for orphan-rule errors (E0117, E0210) |
 | Silence a lint | That lint's page in the Clippy lint list, to learn what it protects against |
 
 ## 4. Patterns to reach for

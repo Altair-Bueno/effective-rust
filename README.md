@@ -55,7 +55,10 @@ clone-to-please-the-borrow-checker, clippy clean, tests pass).
 
 ## Sources
 
-Effective Rust (David Drysdale), the Rust API Guidelines, Rust Design
-Patterns, the Rust Book/Reference/Rustonomicon, the Cargo and rustdoc books,
-blessed.rs, the Tokio tutorial and Alice Ryhl's async posts. See
+The skill links to its sources and summarises them in its own words; it
+does not reproduce their text. Effective Rust (David Drysdale, CC BY-NC-ND
+4.0), the Rust API Guidelines and RFCs (MIT OR Apache-2.0), Rust Design
+Patterns (MPL-2.0), the official Rust, Cargo and rustdoc books, blessed.rs
+(crate names only), the Tokio tutorial and Alice Ryhl's async posts. The full
+list with URLs and licences is in
 `skills/effective-rust/references/resources.md`.

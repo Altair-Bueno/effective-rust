@@ -1,6 +1,8 @@
 # Resources
 
 Every link was checked on 2026-10-31. Read the "When" column as the trigger.
+This file is a locator: it tells you where to read, it does not reproduce
+the sources (see the licence note at the end).
 
 ## Books and guides
 
@@ -81,52 +83,79 @@ Every link was checked on 2026-10-31. Read the "When" column as the trigger.
 | lib.rs | https://lib.rs/ | Compare alternatives, see maintenance and download trends |
 | crates.io | https://crates.io/ | Versions, owners, repository links |
 
-## Effective Rust item index
+## RFCs
 
-Use these numbers when the skill says "Item N".
+The RFC book renders each RFC at `https://rust-lang.github.io/rfcs/<file>.html`;
+the same text lives in the repository at
+`https://github.com/rust-lang/rfcs/blob/main/text/<file>.md`.
 
-| # | Item |
-|---|---|
-| 1 | Use the type system to express your data structures |
-| 2 | Use the type system to express common behavior |
-| 3 | Prefer `Option` and `Result` transforms over explicit `match` |
-| 4 | Prefer idiomatic `Error` types |
-| 5 | Understand type conversions |
-| 6 | Embrace the newtype pattern |
-| 7 | Use builders for complex types |
-| 8 | Familiarize yourself with reference and pointer types |
-| 9 | Consider using iterator transforms instead of explicit loops |
-| 10 | Familiarize yourself with standard traits |
-| 11 | Implement the `Drop` trait for RAII patterns |
-| 12 | Understand the trade-offs between generics and trait objects |
-| 13 | Use default implementations to minimize required trait methods |
-| 14 | Understand lifetimes |
-| 15 | Understand the borrow checker |
-| 16 | Avoid writing unsafe code |
-| 17 | Be wary of shared-state parallelism |
-| 18 | Don't panic |
-| 19 | Avoid reflection |
-| 20 | Avoid the temptation to over-optimize |
-| 21 | Understand what semantic versioning promises |
-| 22 | Minimize visibility |
-| 23 | Avoid wildcard imports |
-| 24 | Re-export dependencies whose types appear in your API |
-| 25 | Manage your dependency graph |
-| 26 | Be wary of feature creep |
-| 27 | Document public interfaces |
-| 28 | Use macros judiciously |
-| 29 | Listen to Clippy |
-| 30 | Write more than unit tests |
-| 31 | Take advantage of the tooling ecosystem |
-| 32 | Set up a continuous integration (CI) system |
-| 33 | Consider making library code `no_std` compatible |
-| 34 | Control what crosses FFI boundaries |
-| 35 | Prefer bindgen to manual FFI mappings |
+| RFC | URL | When |
+|---|---|---|
+| 1574: API documentation conventions | https://rust-lang.github.io/rfcs/1574-more-api-documentation-conventions.html | Writing any doc comment: summary line, sections, examples |
+| 1946: intra-rustdoc links | https://rust-lang.github.io/rfcs/1946-intra-rustdoc-links.html | Linking items in docs with `[`Name`]` |
+| 430: naming conventions | https://rust-lang.github.io/rfcs/0430-finalizing-naming-conventions.html | Casing of crates, types, functions, constants |
+| 344: conventions galore | https://rust-lang.github.io/rfcs/0344-conventions-galore.html | Getter/setter names, `iter`/`iter_mut`/`into_iter`, trait naming, `_mut` suffixes |
+| 199: ownership variants | https://rust-lang.github.io/rfcs/0199-ownership-variants.html | The `as_`/`to_`/`into_` prefixes and `_mut` conventions |
+| 1105: API evolution | https://rust-lang.github.io/rfcs/1105-api-evolution.html | What counts as a breaking change; the basis of the Cargo SemVer chapter |
+| 1122: language semver | https://rust-lang.github.io/rfcs/1122-language-semver.html | Why a toolchain update can break a build and what the project promises |
+| 2008: `#[non_exhaustive]` | https://rust-lang.github.io/rfcs/2008-non-exhaustive.html | Designing enums and structs that can grow |
+| 1023: rebalancing coherence | https://rust-lang.github.io/rfcs/1023-rebalancing-coherence.html | Hitting the orphan rule (E0117, E0210) or overlapping impls |
+| 2126: path clarity | https://rust-lang.github.io/rfcs/2126-path-clarity.html | Module layout (`foo.rs` + `foo/`), `crate::` paths, 2018 module system |
+| 2229: disjoint closure captures | https://rust-lang.github.io/rfcs/2229-capture-disjoint-fields.html | Understanding what a closure borrows since edition 2021 |
+| 3389: `[lints]` manifest table | https://rust-lang.github.io/rfcs/3389-manifest-lint.html | Configuring lints in `Cargo.toml` instead of source attributes |
+| 2906: workspace dependency inheritance | https://rust-lang.github.io/rfcs/2906-cargo-workspace-deduplicate.html | `[workspace.dependencies]` and `workspace = true` |
+| 3501: edition 2024 | https://rust-lang.github.io/rfcs/3501-edition-2024.html | Migrating to or writing for edition 2024 |
 
-Item pages follow `https://effective-rust.com/<slug>.html`; the slugs are
-`use-types`, `use-types-2`, `transform`, `errors`, `casts`, `newtype`,
-`builders`, `references`, `iterators`, `std-traits`, `raii`, `generics`,
-`default-impl`, `lifetimes`, `borrows`, `unsafe`, `deadlock`, `panic`,
-`reflection`, `optimize`, `semver`, `visibility`, `wildcard`, `re-export`,
-`dep-graph`, `features`, `documentation`, `macros`, `clippy`, `testing`,
-`use-tools`, `ci`, `no-std`, `ffi`, `bindgen`.
+## Effective Rust item locator
+
+The book is CC BY-NC-ND 4.0, so this skill links to it and never reproduces
+it. The table maps the item numbers used throughout this skill to the page
+to open; the topic column is a two-word hint in this skill's own words, not
+the book's title.
+
+| # | Topic | URL |
+|---|---|---|
+| 1 | data via types | https://effective-rust.com/use-types.html |
+| 2 | behaviour via types | https://effective-rust.com/use-types-2.html |
+| 3 | Option/Result transforms | https://effective-rust.com/transform.html |
+| 4 | error types | https://effective-rust.com/errors.html |
+| 5 | conversions | https://effective-rust.com/casts.html |
+| 6 | newtypes | https://effective-rust.com/newtype.html |
+| 7 | builders | https://effective-rust.com/builders.html |
+| 8 | references, pointers | https://effective-rust.com/references.html |
+| 9 | iterators | https://effective-rust.com/iterators.html |
+| 10 | std traits | https://effective-rust.com/std-traits.html |
+| 11 | RAII, Drop | https://effective-rust.com/raii.html |
+| 12 | generics vs trait objects | https://effective-rust.com/generics.html |
+| 13 | default trait methods | https://effective-rust.com/default-impl.html |
+| 14 | lifetimes | https://effective-rust.com/lifetimes.html |
+| 15 | borrow checker | https://effective-rust.com/borrows.html |
+| 16 | unsafe | https://effective-rust.com/unsafe.html |
+| 17 | shared-state parallelism | https://effective-rust.com/deadlock.html |
+| 18 | panics | https://effective-rust.com/panic.html |
+| 19 | reflection | https://effective-rust.com/reflection.html |
+| 20 | optimisation | https://effective-rust.com/optimize.html |
+| 21 | semver | https://effective-rust.com/semver.html |
+| 22 | visibility | https://effective-rust.com/visibility.html |
+| 23 | wildcard imports | https://effective-rust.com/wildcard.html |
+| 24 | re-exports | https://effective-rust.com/re-export.html |
+| 25 | dependency graph | https://effective-rust.com/dep-graph.html |
+| 26 | features | https://effective-rust.com/features.html |
+| 27 | documentation | https://effective-rust.com/documentation.html |
+| 28 | macros | https://effective-rust.com/macros.html |
+| 29 | clippy | https://effective-rust.com/clippy.html |
+| 30 | testing | https://effective-rust.com/testing.html |
+| 31 | tooling | https://effective-rust.com/use-tools.html |
+| 32 | CI | https://effective-rust.com/ci.html |
+| 33 | no_std | https://effective-rust.com/no-std.html |
+| 34 | FFI boundaries | https://effective-rust.com/ffi.html |
+| 35 | bindgen | https://effective-rust.com/bindgen.html |
+
+## Licences of the sources
+
+This skill links to its sources and summarises them in its own words. For
+the record: Effective Rust is CC BY-NC-ND 4.0; the Rust API Guidelines, the
+RFCs and the official Rust books are MIT OR Apache-2.0; Rust Design Patterns
+is MPL-2.0; blessed.rs declares no licence, so only crate names (facts) are
+taken from it. Do not paste passages from any of them into this skill or
+into code comments; link instead.

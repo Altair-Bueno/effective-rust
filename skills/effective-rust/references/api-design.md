@@ -4,7 +4,7 @@ Read this before adding or changing any `pub` item. It condenses the Rust
 API Guidelines checklist (https://rust-lang.github.io/api-guidelines/checklist.html)
 and Effective Rust Items 21–27. Codes like C-CASE link to that checklist.
 
-## Naming (RFC 430)
+## Naming (RFC 430, RFC 344, RFC 199)
 
 | Item | Convention |
 |---|---|
@@ -77,7 +77,7 @@ owned→owned, `into_` consuming. Getters are the field name without `get_`
 - Sealed traits for traits you do not want implemented downstream (C-SEALED).
 - Private fields on structs, with accessors (C-STRUCT-PRIVATE). `pub` fields
   are a promise that the representation never changes.
-- `#[non_exhaustive]` on public enums and structs that may grow.
+- `#[non_exhaustive]` (RFC 2008) on public enums and structs that may grow.
 - Do not repeat derived bounds on type definitions (C-STRUCT-BOUNDS): put
   `T: Clone` on the `impl`, not on `struct Foo<T>`.
 - `#[must_use]` on builders, guards, iterators, and `Result`-like types.
@@ -98,7 +98,7 @@ owned→owned, `into_` consuming. Getters are the field name without `get_`
 - `Cargo.toml` carries `description`, `license`, `repository`, `keywords`,
   `categories`, `rust-version` (C-METADATA).
 
-## SemVer [Item 21, Cargo SemVer reference]
+## SemVer [Item 21, RFC 1105, Cargo SemVer reference]
 
 Breaking (major, or minor while `0.x`):
 
