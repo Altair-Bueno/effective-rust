@@ -56,7 +56,10 @@ owned→owned, `into_` consuming. Getters are the field name without `get_`
 - Expose intermediate results to avoid duplicate work (C-INTERMEDIATE): a
   `parse` that returns position as well as value.
 - Caller decides where data lives (C-CALLER-CONTROL): take `&mut [u8]` or
-  `impl Write` instead of returning a fresh `Vec` when buffers are reused.
+  `impl Write` instead of returning a fresh `Vec` when buffers are reused;
+  take `String` by value when you will extend it, so the caller's
+  allocation is reused. The "Who pays" table in `patterns.md` is the
+  general rule.
 - Traits meant for `dyn` use must be object safe (C-OBJECT): no generic
   methods, no `Self: Sized` returns, provide `where Self: Sized` escapes.
 

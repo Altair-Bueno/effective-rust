@@ -141,12 +141,47 @@ on anything that a library exposes and expects to grow.
 
 ## Ownership and borrowing [Items 8, 14, 15]
 
-### Borrowed parameter types
+### Who pays: let the caller decide
 
-Accept `&str` not `&String`, `&[T]` not `&Vec<T>`, `&Path` not `&PathBuf`,
-`&T` not `&Box<T>`. Every owned type derefs to the borrowed one, so callers
-lose nothing and you accept more inputs. Take ownership (`String`, `Vec<T>`)
-only when you store the value.
+Rust is a systems language under the high-level syntax. Every call has a
+cost, and the signature decides whether the caller can avoid it. Design
+signatures so the caller makes the resource decisions, the way dependency
+injection lets the caller pick the implementation.
+
+| You will... | Take or return | Because |
+|---|---|---|
+| Only read the input | `&str`, `&[T]`, `&Path`, `&T` | Every owned type derefs to these; the caller keeps whatever storage it has |
+| Keep the input | `String`, `Vec<T>`, `T` by value | It moves in; no clone, no second allocation |
+| Extend or transform the input and hand it back | `mut s: String` in, `String` out | Reuses the allocation and spare capacity the caller already paid for (a request body, a reused buffer) |
+| Fill an output buffer | `&mut Vec<u8>`, `&mut String`, `impl fmt::Write`, `impl io::Write` | The caller reuses buffers across calls and picks the sink |
+| Produce a sequence | `impl Iterator<Item = ..>` | The caller decides to collect, count, take the first, or stop early |
+| Usually borrow, sometimes own | `Cow<'_, str>` | Allocates only on the rare path |
+| Write output | `impl io::Write`, not `println!` | One lock, one flush, any destination |
+
+```rust
+fn log(s: &str) { .. }                                   // reads only: borrow
+fn with_suffix(mut s: String) -> String { s += "-end"; s } // builds on it: take it
+fn render(&self, out: &mut String) { .. }                 // caller owns the buffer
+fn matching(&self, p: &str) -> impl Iterator<Item = &Item> + '_ { .. }
+```
+
+The second function is the one agents get wrong in the other direction:
+taking `&str` and writing `let mut s = s.to_owned();` on the first line
+throws away an allocation the caller may already have, with capacity to
+spare. `clippy::needless_pass_by_value` catches the `String`-only-read
+case; nothing catches the `to_owned` case except reading the signature.
+
+The hidden costs to keep in mind, whether or not anyone asked for
+performance: allocation (`to_owned`, `to_vec`, `format!`, `collect`,
+`Box::new`, `clone` of owned data), syscalls (per-item `fs`, `net` and
+`metadata` calls, unbuffered writes, `println!` per line), synchronisation
+(`Mutex::lock`, `Arc::clone` is an atomic increment), hashing (`HashMap`
+lookups hash the key each time), dynamic dispatch and boxing (`dyn Trait`,
+`Box<dyn Error>` per error), and drop of large structures. None of these is
+wrong when the caller chose it. They are wrong when the signature hides
+them. This is not Item 20's premature optimisation; measuring still comes
+before tuning. It is refusing to pay twice for what the caller already
+paid once.
 
 ### `impl AsRef` and `impl Into` at the boundary
 

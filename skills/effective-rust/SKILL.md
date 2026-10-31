@@ -71,8 +71,15 @@ to skip it.
 
 - Make invalid states unrepresentable: newtypes for validated values, enums
   instead of `bool`/`Option` flags, typestate for protocols and lifecycles.
-- Decide ownership at the boundary. Accept `&str`, `&[T]`, `&Path`,
-  `impl AsRef<..>` or `impl Iterator`; return owned values; store owned values.
+- Rust is a systems language. Every call has a cost (an allocation, a
+  syscall, a lock, a copy, a hash) and the signature decides who pays it.
+  Let the caller decide. Input you only read: borrow (`&str`, `&[T]`,
+  `&Path`). Input you keep, extend or transform: take it by value, so the
+  caller's existing allocation and its spare capacity do the work. Output
+  the caller will reuse: fill `&mut Vec<u8>`, `&mut String` or `impl Write`.
+  Sequences: return `impl Iterator` and let the caller collect, count or
+  stop early. A cost hidden inside a convenient signature is one the caller
+  can never avoid. See "Who pays" in `references/patterns.md`.
 - Pick the error strategy for the crate kind: a `thiserror` enum for libraries,
   `anyhow`/`eyre` with context for binaries. See `references/errors.md`.
 - Choose generics by default and `dyn Trait` when you need heterogeneous
@@ -217,8 +224,9 @@ Details and snippets in `references/patterns.md`.
   Use `bon` or `typed-builder` if the project already depends on one.
 - **RAII guards** (`Drop`) for anything that must be released or restored.
 - **`Default` derive** plus `..Default::default()` struct update syntax.
-- **Borrowed argument types** (`&str`, `&[T]`, `&Path`) and `impl AsRef<T>`
-  only where it buys real ergonomics.
+- **Caller-controlled resources**: borrow to read, take by value to keep or
+  extend, take `&mut` buffers or `impl Write` to fill, return `impl Iterator`
+  to let the caller decide what to materialise (C-CALLER-CONTROL).
 - **`mem::take` / `mem::replace` / `Option::take`** to move out of `&mut`
   without cloning.
 - **Entry API** (`map.entry(k).or_insert_with(..)`) instead of get-then-insert.
@@ -257,8 +265,11 @@ Details and the replacement for each in `references/anti-patterns.md`.
 - `unwrap()` / `expect()` / `panic!` on recoverable conditions in library code.
 - `as` for numeric conversions that can truncate or wrap; use `From`,
   `TryFrom`, `checked_*`, `saturating_*`.
-- `&String`, `&Vec<T>`, `&Box<T>` parameters; `String` parameters that are
-  only read.
+- Signatures that pay for the caller: `String` only read, `&str` turned into
+  `to_owned()` on the first line, a fresh `Vec` returned where a `&mut` buffer
+  or an iterator would let the caller reuse what it has, `println!` inside a
+  library where `impl Write` lets the caller pick the sink.
+- `&String`, `&Vec<T>`, `&Box<T>` parameters.
 - `bool` and `Option<bool>` parameters, out-parameters, `Option<Option<T>>`.
 - `impl Deref` to fake inheritance.
 - `#![deny(warnings)]` in source (breaks on every toolchain update) and

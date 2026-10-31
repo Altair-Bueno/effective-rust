@@ -69,6 +69,27 @@ Index with `get(i)` when the index comes from outside.
 remains fine for `u8 as char`, enum discriminants with `#[repr]`, and
 intentional truncation with a comment.
 
+## Signatures that pay for the caller
+
+**Looks like:** `fn greet(name: String)` that only prints; `fn slug(s: &str)
+-> String` that starts with `let mut s = s.to_owned()` when callers hold a
+`String` they are done with; `fn lines(&self) -> Vec<String>` built from an
+iterator the caller only loops over; `fn render(&self) -> String` called in
+a loop where the caller could hand in one buffer; `println!` inside a
+library function.
+
+**Why:** the function has made a resource decision the caller cannot undo:
+an allocation that already existed is thrown away and redone, a buffer
+that could be reused is recreated per call, a sequence is materialised that
+would have been consumed lazily, stdout is locked and flushed once per
+line. Rust is a systems language; the signature is where costs are
+assigned.
+
+**Instead:** borrow to read; take by value to keep, extend or transform;
+accept `&mut String`/`&mut Vec<u8>`/`impl Write` to fill; return
+`impl Iterator`; let the caller pick the sink. See "Who pays" in
+`patterns.md`.
+
 ## Over-owned parameters
 
 **Looks like:** `fn f(s: &String)`, `fn g(v: &Vec<T>)`, `fn h(name: String)`
