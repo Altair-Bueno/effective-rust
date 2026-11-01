@@ -1,5 +1,6 @@
 ---
 name: effective-rust
+license: MIT OR Apache-2.0
 description: Idiomatic Rust guidance for writing, reviewing, refactoring and debugging Rust code. Use this skill whenever a task touches a .rs file, Cargo.toml, Cargo.lock, a cargo/clippy/rustfmt/rustc/miri command or its output, or any Rust crate, workspace, trait, lifetime, borrow-checker, async/tokio, unsafe/FFI, error-handling, testing or dependency question, even when the user never says "Rust". It stops agents from reinventing std and well-known crates, names the reference to read before each kind of task, and fixes the check/clippy/test/fmt workflow.
 ---
 

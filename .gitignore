@@ -3,3 +3,4 @@ Cargo.lock
 evals/results/
 *-workspace/
 .DS_Store
+.claude/
