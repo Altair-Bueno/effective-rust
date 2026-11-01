@@ -59,7 +59,8 @@ The skill links to its sources and summarises them in its own words; it
 does not reproduce their text. Effective Rust (David Drysdale, CC BY-NC-ND
 4.0), the Rust API Guidelines and RFCs (MIT OR Apache-2.0), Rust Design
 Patterns (MPL-2.0), the official Rust, Cargo and rustdoc books, blessed.rs
-(crate names only), the Tokio tutorial and Alice Ryhl's async posts. The full
+(crate names only), the Google Rust Style Guide (CC BY 3.0), the Tokio
+tutorial and Alice Ryhl's async posts. The full
 list with URLs and licences is in
 `skills/effective-rust/references/resources.md`.
 

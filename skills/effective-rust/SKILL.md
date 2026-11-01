@@ -193,7 +193,8 @@ prevents the most common mistake for that task. Full URLs live in
 | Before you... | Read first |
 |---|---|
 | Write a conversion between your own types | Conversions section of `references/patterns.md`; Effective Rust Item 5 |
-| Design or change a `pub` API in a library | `references/api-design.md`; Rust API Guidelines checklist; RFC 1105 (API evolution), RFC 344 and 199 (naming); Effective Rust Items 1–13, 22–24 |
+| Design or change a `pub` API in a library | `references/api-design.md`; Rust API Guidelines checklist; RFC 1105 (API evolution), RFC 344 and 199 (naming); Google Rust Style Guide (traits, naming, `#[must_use]`); Effective Rust Items 1–13, 22–24 |
+| Lay out modules, name files, modules, constructors or accessors | Modules and crates section of `references/patterns.md`; Google Rust Style Guide (code organisation, naming) |
 | Define an error type or choose an error strategy | `references/errors.md`; Effective Rust Item 4; `thiserror` and `anyhow` docs |
 | Add a dependency | `references/already-exists.md`; blessed.rs; the crate's docs.rs page; Effective Rust Items 25–26 |
 | Call a crate API you have not used in this session | Its docs.rs page at the version pinned in `Cargo.lock`. Never guess method names or signatures |

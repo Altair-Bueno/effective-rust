@@ -47,6 +47,10 @@ owned→owned, `into_` consuming. Getters are the field name without `get_`
   inherent methods (C-SMART-PTR): use `Arc::clone(&x)` style associated fns.
 - Operator overloads keep the operator's meaning (C-OVERLOAD).
 - Conversions live on the most specific type (C-CONV-SPECIFIC).
+- A `From` impl that is the main way to build a type gets a named
+  constructor beside it (`from_bytes`, `from_env`) implemented by calling
+  the trait; `len` comes with `is_empty`, `new()` with `Default` (Google
+  Rust Style Guide; `clippy::len_without_is_empty`).
 
 ## Flexibility
 
@@ -83,7 +87,11 @@ owned→owned, `into_` consuming. Getters are the field name without `get_`
 - `#[non_exhaustive]` (RFC 2008) on public enums and structs that may grow.
 - Do not repeat derived bounds on type definitions (C-STRUCT-BOUNDS): put
   `T: Clone` on the `impl`, not on `struct Foo<T>`.
-- `#[must_use]` on builders, guards, iterators, and `Result`-like types.
+- `#[must_use]` on builders, guards, iterators, `Result`-like types, error
+  types and lazy-computation types: a dropped error or an unpolled future is
+  a bug, and on functions whose ignored result signals a mistake.
+- `pub const fn` is a one-way door: removing `const` later is a breaking
+  change, so mark a function `const` only when its body can stay `const`.
 - `#[doc(hidden)]` for items that must be `pub` for macros but are not API
   (C-HIDDEN).
 

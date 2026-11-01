@@ -28,6 +28,7 @@ the sources (see the licence note at the end).
 | Learn Rust With Entirely Too Many Linked Lists | https://rust-unofficial.github.io/too-many-lists/ | `Rc`, `RefCell`, raw pointers in data structures |
 | Rust Cookbook | https://rust-lang-nursery.github.io/rust-cookbook/ | Quick recipe for common tasks with the right crate |
 | Comprehensive Rust (Google) | https://google.github.io/comprehensive-rust/ | Course-style refresher incl. async, bare-metal, concurrency |
+| Rust Style Guide (Google) | https://google.github.io/styleguide/rustguide.html | Module layout, naming of files, modules, constructors and accessors, trait and `From`/constructor pairing, `#[must_use]`, `const fn`; skip the Chromium- and Fuchsia-only rules |
 | Secure Rust Guidelines (ANSSI) | https://anssi-fr.github.io/rust-guide/ | Security-sensitive code |
 | The Embedded Rust Book | https://docs.rust-embedded.org/book/ | `no_std`, embedded targets |
 | Rust by Example | https://doc.rust-lang.org/rust-by-example/ | Syntax reminders |
@@ -161,6 +162,6 @@ the book's title.
 This skill links to its sources and summarises them in its own words. For
 the record: Effective Rust is CC BY-NC-ND 4.0; the Rust API Guidelines, the
 RFCs and the official Rust books are MIT OR Apache-2.0; Rust Design Patterns
-is MPL-2.0; blessed.rs declares no licence, so only crate names (facts) are
-taken from it. Do not paste passages from any of them into this skill or
+is MPL-2.0; the Google Rust Style Guide is CC BY 3.0; blessed.rs declares
+no licence, so only crate names (facts) are taken from it. Do not paste passages from any of them into this skill or
 into code comments; link instead.

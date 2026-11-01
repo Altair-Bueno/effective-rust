@@ -126,6 +126,10 @@ impl TryFrom<&[u8]> for Frame { type Error = FrameError; /* parse */ }
 
 Keep an inherent alias (`frame.header()`) only when discoverability
 matters, and implement it by calling the trait so there is one body.
+When a `From` impl is the main way a type gets built, pair it with a named
+constructor (`Frame::from_bytes`, `Config::from_env`) that calls the trait:
+the trait serves `?`, `.into()` and generic code, the name serves readers
+scanning the docs (Google Rust Style Guide).
 
 ### Sealed traits and `#[non_exhaustive]` [C-SEALED, C-STRUCT-PRIVATE]
 
@@ -319,7 +323,10 @@ pub trait StrExt { fn is_blank(&self) -> bool; }
 impl StrExt for str { fn is_blank(&self) -> bool { self.trim().is_empty() } }
 ```
 
-Adds methods to foreign types without a wrapper struct. Name them `XxxExt`.
+Adds methods to foreign types without a wrapper struct. Name them `XxxExt`
+and keep them out of generic bounds: an extension trait exists to add
+methods at call sites, not to abstract over types. Write a real trait for
+that (Google Rust Style Guide; RFC 445).
 
 ### Avoid stacking bounds: name them with a trait
 
@@ -406,6 +413,12 @@ all.
 Consumers should see a handful of types and traits at the crate root; the
 module tree itself stays private (`mod codec;` plus `pub use codec::Encode;`).
 
+Non-leaf modules hold `mod` declarations, re-exports and at most a little
+glue; implementations live in leaf modules. Name a file or leaf module after
+the primary item it defines (`frame.rs` for `Frame`). A module that holds
+several unrelated items wants splitting, or promoting to a crate (Google
+Rust Style Guide).
+
 ### `core` and `alloc` first
 
 Import from `core` and `alloc` when the item exists there and from `std`
@@ -451,6 +464,28 @@ name `alloc::` paths.
   import reads as "I need the methods". Lint: `clippy::unused_trait_names`.
 - `core::` and `alloc::` paths; `foo.rs` plus `foo/` rather than `mod.rs`;
   `Arc::clone(&x)` rather than `x.clone()` on reference-counted pointers.
+- Constructors: `new`, `with_foo` or `new_with_foo` for a variant that takes
+  an extra input, `try_new` when fallible, `from_foo` for a value built out
+  of another value (and then `From` is usually right too).
+- Accessors: `foo()` returns a reference, `foo_mut()` a mutable one,
+  `set_foo()` replaces, `take_foo()` moves out leaving a default,
+  `replace_foo()` swaps and returns the old value, `with_foo(|f| ..)` lends
+  the field to a closure, which is the shape for interior-mutability
+  wrappers and for work that must follow the change.
+- Implement expected sets together: `is_empty` with `len`, `Default` with a
+  zero-argument `new`, `Hash` with `Eq`, `Ord` with `PartialOrd` when the
+  order is total. Lints: `clippy::len_without_is_empty`,
+  `clippy::new_without_default`, `clippy::derived_hash_with_manual_eq`.
+- Pattern-match instead of check-then-unwrap: `if let Some(x) = o` and
+  `let Some(x) = o else { .. }` make the compiler prove presence;
+  `if o.is_some() { o.unwrap() }` makes the reader do it.
+- No code before `main`: no `ctor`-style initialisers. Lazy state goes in
+  `LazyLock`/`OnceLock` and runs on first use.
+- Spell terms out; abbreviate only what every Rust reader knows (`len`,
+  `ctx`, `cfg`, `idx` in a tight loop).
+
+(The last six follow the Google Rust Style Guide, which agrees with the
+rest of this file; see `references/resources.md` for the URL.)
 
 ## Macros [Item 28]
 
